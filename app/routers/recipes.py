@@ -4,12 +4,15 @@ from fastapi import (
     HTTPException,
     Response,
     status,
+    Query,
 )
 
 from sqlalchemy import (
     func,
     select,
 )
+
+from typing import Literal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +21,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_session
 
 from app.models.ingredient import Ingredient
+from app.models.category import Category
 from app.models.recipe import Recipe
 from app.models.recipe_ingredient import RecipeIngredient
 from app.models.recipe_step import RecipeStep
@@ -858,6 +862,206 @@ async def search_recipes(
     result = await session.execute(
         statement
     )
+
+    recipes = result.scalars().all()
+
+    return recipes
+
+
+@router.get(
+    "",
+    response_model=list[RecipeResponse],
+)
+async def search_recipes_by_ingredient(
+    ingredient: str,
+    db: AsyncSession = Depends(get_session),
+):
+    query = (
+        select(Recipe)
+        .join(
+            RecipeIngredient,
+            Recipe.id == RecipeIngredient.recipe_id,
+        )
+        .join(
+            Ingredient,
+            RecipeIngredient.ingredient_id == Ingredient.id,
+        )
+        .where(
+            Ingredient.name.ilike(f"%{ingredient}%")
+        )
+        .distinct()
+    )
+
+    result = await db.execute(query)
+
+    recipes = result.scalars().all()
+
+    return recipes
+
+
+@router.get(
+    "",
+    response_model=list[RecipeResponse],
+)
+async def search_recipes_by_category(
+    category: str,
+    db: AsyncSession = Depends(get_session),
+):
+    query = (
+        select(Recipe)
+        .join(
+            Category,
+            Recipe.category_id == Category.id,
+        )
+        .where(
+            Category.name.ilike(f"%{category}%")
+        )
+        .distinct()
+    )
+
+    result = await db.execute(query)
+
+    recipes = result.scalars().all()
+
+    return recipes
+
+
+
+
+@router.get(
+    "",
+    response_model=list[RecipeResponse],
+)
+async def search_and_paginate_recipes(
+    search: str | None = Query(
+        default=None,
+        min_length=1,
+    ),
+
+    ingredient: str | None = Query(
+        default=None,
+        min_length=1,
+    ),
+
+    category: str | None = Query(
+        default=None,
+        min_length=1,
+    ),
+
+    page: int = Query(
+        default=1,
+        ge=1,
+    ),
+
+    limit: int = Query(
+        default=10,
+        ge=1,
+        le=100,
+    ),
+
+    sort_by: Literal[
+        "name",
+        "created_at",
+        "id",
+    ] = "created_at",
+
+    sort_order: Literal[
+        "asc",
+        "desc",
+    ] = "desc",
+
+    db: AsyncSession = Depends(get_session),
+):
+    query = select(Recipe)
+
+    # --------------------------------------------------
+    # SEARCH BY RECIPE NAME
+    # --------------------------------------------------
+
+    if search:
+        query = query.where(
+            Recipe.name.ilike(
+                f"%{search}%"
+            )
+        )
+
+    # --------------------------------------------------
+    # SEARCH BY CATEGORY
+    # --------------------------------------------------
+
+    if category:
+        query = query.join(
+            Category,
+            Recipe.category_id == Category.id,
+        )
+
+        query = query.where(
+            Category.name.ilike(
+                f"%{category}%"
+            )
+        )
+
+    # --------------------------------------------------
+    # SEARCH BY INGREDIENT
+    # --------------------------------------------------
+
+    if ingredient:
+        query = query.join(
+            RecipeIngredient,
+            Recipe.id
+            == RecipeIngredient.recipe_id,
+        )
+
+        query = query.join(
+            Ingredient,
+            RecipeIngredient.ingredient_id
+            == Ingredient.id,
+        )
+
+        query = query.where(
+            Ingredient.name.ilike(
+                f"%{ingredient}%"
+            )
+        )
+
+    # --------------------------------------------------
+    # REMOVE DUPLICATE RECIPES
+    # --------------------------------------------------
+
+    query = query.distinct()
+
+    # --------------------------------------------------
+    # SORTING
+    # --------------------------------------------------
+
+    sort_column = {
+        "id": Recipe.id,
+        "name": Recipe.name,
+        "created_at": Recipe.created_at,
+    }[sort_by]
+
+    if sort_order == "asc":
+        query = query.order_by(
+            sort_column.asc()
+        )
+    else:
+        query = query.order_by(
+            sort_column.desc()
+        )
+
+    # --------------------------------------------------
+    # PAGINATION
+    # --------------------------------------------------
+
+    offset = (page - 1) * limit
+
+    query = query.offset(offset).limit(limit)
+
+    # --------------------------------------------------
+    # EXECUTE QUERY
+    # --------------------------------------------------
+
+    result = await db.execute(query)
 
     recipes = result.scalars().all()
 
