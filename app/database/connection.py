@@ -1,22 +1,26 @@
+import os
+
+from dotenv import load_dotenv
+
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
 
-from app.database.base import Base
+load_dotenv()
 
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-DATABASE_URL = (
-    "postgresql+asyncpg://postgres:Ndubuisi34&@localhost:5432/recipe_db"
-)
-
+if not DATABASE_URL:
+    raise ValueError(
+        "DATABASE_URL is not set in the .env file"
+    )
 
 engine = create_async_engine(
     DATABASE_URL,
     echo=True,
 )
-
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,

@@ -1,25 +1,85 @@
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class IngredientCreate(BaseModel):
     name: str = Field(
         min_length=1,
-        max_length=100,
+        max_length=150,
     )
 
-    @field_validator("name")
-    @classmethod
-    def validate_name(cls, value: str) -> str:
-        value = value.strip()
+    amount: float | None = Field(
+        default=None,
+        ge=0,
+    )
 
-        if not value:
-            raise ValueError("Ingredient name cannot be empty.")
+    unit: str = Field(
+        min_length=1,
+        max_length=50,
+    )
 
-        return value
+    preparation: str | None = Field(
+        default=None,
+        max_length=255,
+    )
 
 
 class IngredientResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
     id: int
     name: str
+
+
+class RecipeIngredientCreate(BaseModel):
+    name: str = Field(
+        min_length=1,
+        max_length=150,
+    )
+
+    amount: float | None = Field(
+        default=None,
+        ge=0,
+    )
+
+    unit: str = Field(
+        min_length=1,
+        max_length=50,
+    )
+
+    preparation: str | None = Field(
+        default=None,
+        max_length=255,
+    )
+
+
+class RecipeIngredientUpdate(BaseModel):
+    amount: float | None = Field(
+        default=None,
+        ge=0,
+    )
+
+    unit: str = Field(
+        min_length=1,
+        max_length=50,
+    )
+
+    preparation: str | None = Field(
+        default=None,
+        max_length=255,
+    )
+
+
+class RecipeIngredientResponse(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+    id: int
+    recipe_id: int
+    ingredient_id: int
+    amount: float | None
+    unit: str
+    preparation: str | None
+    ingredient: IngredientResponse

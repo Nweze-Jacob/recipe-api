@@ -52,6 +52,54 @@ class RecipeCreate(BaseModel):
         return value
 
 
+class RecipeUpdate(BaseModel):
+    name: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=150,
+    )
+
+    description: str | None = Field(
+        default=None,
+        max_length=5000,
+    )
+
+    category_id: int | None = Field(
+        default=None,
+        gt=0,
+    )
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        value = value.strip()
+
+        if not value:
+            raise ValueError("Recipe name cannot be empty.")
+
+        return value
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(
+        cls,
+        value: str | None,
+    ) -> str | None:
+
+        if value is None:
+            return None
+
+        value = value.strip()
+
+        if not value:
+            return None
+
+        return value
+
+
 class RecipeResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

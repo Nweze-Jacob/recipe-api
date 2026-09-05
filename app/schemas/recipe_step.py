@@ -2,39 +2,33 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    field_validator,
 )
 
 
 class RecipeStepCreate(BaseModel):
     step_number: int = Field(
-        gt=0,
+        gt=0
     )
 
     instruction: str = Field(
-        min_length=1,
-        max_length=5000,
+        min_length=1
     )
 
-    @field_validator("instruction")
-    @classmethod
-    def validate_instruction(
-        cls,
-        value: str,
-    ) -> str:
 
-        value = value.strip()
+class RecipeStepUpdate(BaseModel):
+    step_number: int = Field(
+        gt=0
+    )
 
-        if not value:
-            raise ValueError(
-                "Instruction cannot be empty."
-            )
-
-        return value
+    instruction: str = Field(
+        min_length=1
+    )
 
 
 class RecipeStepResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
     id: int
     recipe_id: int
