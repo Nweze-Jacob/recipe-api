@@ -1,54 +1,52 @@
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import (
+    DateTime,
+    String,
+    func,
+)
 
-from app.database import Base
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    relationship,
+)
+
+from app.database.base import Base
 
 
 if TYPE_CHECKING:
     from app.models.recipe import Recipe
-    from app.models.review import Review
 
 
 class User(Base):
     __tablename__ = "users"
 
-    # Primary Key
     id: Mapped[int] = mapped_column(
         primary_key=True,
-        index=True
-    )
-
-    # User information
-    username: Mapped[str] = mapped_column(
-        String(100),
-        unique=True,
-        nullable=False,
-        index=True
+        index=True,
     )
 
     email: Mapped[str] = mapped_column(
         String(255),
         unique=True,
         nullable=False,
-        index=True
+        index=True,
     )
 
     hashed_password: Mapped[str] = mapped_column(
         String(255),
-        nullable=False
+        nullable=False,
     )
 
-    # Relationships
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
     recipes: Mapped[list["Recipe"]] = relationship(
         "Recipe",
         back_populates="owner",
-        cascade="all, delete-orphan"
-    )
-
-    reviews: Mapped[list["Review"]] = relationship(
-        "Review",
-        back_populates="user",
-        cascade="all, delete-orphan"
     )

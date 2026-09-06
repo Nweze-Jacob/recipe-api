@@ -9,9 +9,9 @@ from app.database import (
     init_models,
 )
 
-from app.routers.recipes import (
-    router as recipes_router,
-)
+from app.routers.auth import router as auth_router
+from app.routers.recipes import router as recipes_router
+
 
 
 @asynccontextmanager
@@ -31,10 +31,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-
-app.include_router(
-    recipes_router
-)
+app.include_router(auth_router)
+app.include_router(recipes_router)
 
 
 @app.get("/")
