@@ -1,3 +1,8 @@
+# FULL NAME: NWEZE JACOB NDUBUISI
+# APP-2025-64405
+# COURSE: BACKEND ENGINEERING
+
+
 # Recipe API
 
 A purely back-end JSON API for creating, storing, searching, and retrieving
