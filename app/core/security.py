@@ -3,11 +3,7 @@ from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from pwdlib import PasswordHash
 
-from app.core.config import (
-    SECRET_KEY,
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-    REFRESH_TOKEN_EXPIRE_DAYS,
-)
+from app.core.config import settings
 
 
 # --------------------------------------------------
@@ -35,7 +31,9 @@ def verify_password(
 # JWT CONFIGURATION
 # --------------------------------------------------
 
-ALGORITHM = "HS256"
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
 
 # --------------------------------------------------
@@ -60,7 +58,7 @@ def create_access_token(
 
     return jwt.encode(
         payload,
-        SECRET_KEY,
+        settings.SECRET_KEY,
         algorithm=ALGORITHM,
     )
 
@@ -87,7 +85,7 @@ def create_refresh_token(
 
     return jwt.encode(
         payload,
-        SECRET_KEY,
+        settings.SECRET_KEY,
         algorithm=ALGORITHM,
     )
 
@@ -103,7 +101,7 @@ def decode_token(
     try:
         payload = jwt.decode(
             token,
-            SECRET_KEY,
+            settings.SECRET_KEY,
             algorithms=[ALGORITHM],
         )
 

@@ -1,10 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
-from jose import JWTError, jwt
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
 
-from app.core.config import SECRET_KEY, ALGORITHM
+from fastapi.security import (
+    OAuth2PasswordRequestForm,
+)
+
+from jose import JWTError
+
+from sqlalchemy import select
+
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+)
+
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -12,12 +24,16 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
+
 from app.database.connection import get_session
+
 from app.models.user import User
+
 from app.schemas.auth import (
     RefreshTokenRequest,
     TokenResponse,
 )
+
 from app.schemas.user import (
     UserCreate,
     UserResponse,
@@ -46,9 +62,12 @@ async def register(
         )
     )
 
-    existing_user = result.scalar_one_or_none()
+    existing_user = (
+        result.scalar_one_or_none()
+    )
 
     if existing_user:
+
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Email already registered",
@@ -64,9 +83,11 @@ async def register(
     db.add(user)
 
     await db.commit()
+
     await db.refresh(user)
 
     return user
+
 
 
 @router.post(
@@ -77,7 +98,6 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_session),
 ):
-
     result = await db.execute(
         select(User).where(
             User.email == form_data.username
@@ -101,14 +121,19 @@ async def login(
             detail="Invalid email or password",
         )
 
-    access_token = create_access_token(user.id)
+    access_token = create_access_token(
+        str(user.id)
+    )
 
-    refresh_token = create_refresh_token(user.id)
+    refresh_token = create_refresh_token(
+        str(user.id)
+    )
 
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
     )
+
 
 
 @router.post(
@@ -118,7 +143,6 @@ async def login(
 async def refresh_token(
     data: RefreshTokenRequest,
 ):
-
     try:
         payload = decode_token(
             data.refresh_token
@@ -130,7 +154,13 @@ async def refresh_token(
                 detail="Invalid refresh token",
             )
 
-        user_id = int(payload["sub"])
+        user_id = payload.get("sub")
+
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token",
+            )
 
     except (
         JWTError,
@@ -143,7 +173,9 @@ async def refresh_token(
             detail="Invalid or expired refresh token",
         )
 
-    access_token = create_access_token(user_id)
+    access_token = create_access_token(
+        user_id
+    )
 
     new_refresh_token = create_refresh_token(
         user_id
